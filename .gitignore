@@ -1,0 +1,27 @@
+# Virtual environments
+.venv/
+venv/
+dashboard/.venv/
+dashboard/venv/
+ENV/
+env/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Agent & IDE state
+.agents/
+.gemini/
+
+# Temporary run outputs (preserve demo session files)
+dashboard/outputs/*
+!dashboard/outputs/demo/
+outputs/*
+!outputs/demo/

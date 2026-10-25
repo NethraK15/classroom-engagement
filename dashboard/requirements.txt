@@ -1,0 +1,24 @@
+# ─── Core AI Stack ────────────────────────────────────────────────────────────
+torch>=2.0.0
+torchvision>=0.15.0
+
+# ─── Computer Vision ──────────────────────────────────────────────────────────
+opencv-python-headless>=4.8.0
+ultralytics>=8.0.0      # YOLOv8 + ByteTrack
+lapx>=0.5.5             # ByteTrack dependency
+
+# ─── Web Framework ────────────────────────────────────────────────────────────
+flask>=3.0.0
+werkzeug>=3.0.0
+
+# ─── Data & Visualisation ─────────────────────────────────────────────────────
+numpy>=1.24.0
+pandas>=2.0.0
+matplotlib>=3.7.0
+tqdm>=4.65.0
+
+# ─── Cloud Deployment ─────────────────────────────────────────────────────────
+a2wsgi>=1.10.0
+uvicorn>=0.23.0
+gradio>=4.0.0
+

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>EngageAI — Classroom Engagement Intelligence</title>
+  <meta name="description" content="AI-powered classroom engagement analysis using YOLOv8, EfficientNet-B0, and Binary Transformer."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+<!-- ── Animated Background ─────────────────────────────────────────── -->
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-orb orb1" aria-hidden="true"></div>
+<div class="bg-orb orb2" aria-hidden="true"></div>
+<div class="bg-orb orb3" aria-hidden="true"></div>
+
+<!-- ── Nav ────────────────────────────────────────────────────────── -->
+<nav class="nav" role="navigation" aria-label="main navigation">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <span class="brand-icon">⬡</span>
+      <span class="brand-name">Engage<span class="brand-accent">AI</span></span>
+    </div>
+    <div class="nav-badges">
+      <span class="badge badge-green">YOLOv8</span>
+      <span class="badge badge-blue">EfficientNet-B0</span>
+      <span class="badge badge-purple">Transformer</span>
+      <span class="badge badge-amber">~80% Accuracy</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────────── -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-inner">
+    <div class="hero-tag">Binary Engagement Classifier</div>
+    <h1 id="hero-title" class="hero-title">
+      Classroom Engagement<br/>
+      <span class="hero-gradient">Intelligence</span>
+    </h1>
+    <p class="hero-sub">
+      Upload a classroom video — every student's face is automatically detected, tracked with 
+      ByteTrack and analysed through a 1989-dim temporal transformer pipeline for
+      <strong>Engaged</strong> / <strong>Disengaged</strong> classification with per-student probability scores.
+    </p>
+
+    <!-- Pipeline visualiser (static) -->
+    <div class="pipeline-strip" aria-label="Model pipeline steps">
+      <div class="pipe-step" data-step="yolo">
+        <div class="pipe-icon">👁</div>
+        <div class="pipe-label">YOLOv8<br/><span>Face Detection</span></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" data-step="track">
+        <div class="pipe-icon">🔗</div>
+        <div class="pipe-label">ByteTrack<br/><span>Multi-face Tracking</span></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" data-step="effnet">
+        <div class="pipe-icon">🧠</div>
+        <div class="pipe-label">EfficientNet-B0<br/><span>1280-dim Visual</span></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" data-step="openface">
+        <div class="pipe-icon">😶</div>
+        <div class="pipe-label">OpenFace<br/><span>709-dim Dynamics</span></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" data-step="transformer">
+        <div class="pipe-icon">⚡</div>
+        <div class="pipe-label">Transformer<br/><span>1989-dim Fused</span></div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" data-step="output">
+        <div class="pipe-icon">📊</div>
+        <div class="pipe-label">Classification<br/><span>Engaged / Disengaged</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Upload Card & Demo Option ─────────────────────────────────── -->
+<main class="main-container" id="main-content">
+  <div class="upload-card glass" id="upload-section" role="region" aria-label="Video upload and demo selection">
+    <div class="card-header">
+      <div class="header-split">
+        <div>
+          <h2 class="card-title">📤 Classroom Video Analysis</h2>
+          <p class="card-sub">Choose between uploading your own classroom recording or running an instant demo analysis</p>
+        </div>
+        <button class="btn-demo" id="demoBtn" type="button" aria-label="Try with Demo Video">
+          <span class="demo-icon">⚡</span>
+          <span class="demo-text-wrap">
+            <span class="demo-title">Try with Demo Video</span>
+            <span class="demo-sub">Instant preview · Pre-run classroom session</span>
+          </span>
+          <span class="demo-badge">Instant</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Input Source Mode Selector (Upload File vs Live Webcam) -->
+    <div class="input-mode-tabs" role="tablist" aria-label="Input video source mode">
+      <button class="mode-tab active" id="tabUploadMode" type="button" role="tab" aria-selected="true">
+        <span class="tab-icon">📁</span>
+        <span class="tab-label">Upload Video File</span>
+      </button>
+      <button class="mode-tab" id="tabWebcamMode" type="button" role="tab" aria-selected="false">
+        <span class="tab-icon">📹</span>
+        <span class="tab-label">Record Live Webcam</span>
+        <span class="mode-badge">Live</span>
+      </button>
+    </div>
+
+    <!-- Drop Zone (Upload Mode) -->
+    <div class="drop-zone" id="dropZone" role="button" tabindex="0"
+         aria-label="Drop video here or click to browse">
+      <div class="drop-content" id="dropContent">
+        <div class="drop-icon" id="dropIcon">🎬</div>
+        <p class="drop-title" id="dropTitle">Drop your classroom video here</p>
+        <p class="drop-hint" id="dropHint">or click to browse files</p>
+        <p class="drop-formats">MP4 · AVI · MOV · MKV · WEBM (up to 2 GB)</p>
+      </div>
+      <input type="file" id="videoInput" accept="video/*" class="hidden-input" aria-label="File input"/>
+    </div>
+
+    <!-- Live Webcam Studio (Webcam Mode) -->
+    <div class="webcam-studio hidden" id="webcamStudio" role="region" aria-label="Live webcam recording studio">
+      <div class="webcam-viewport">
+        <!-- Live stream preview element -->
+        <video id="webcamVideo" class="webcam-video" autoplay playsinline muted></video>
+        <!-- Recorded playback element for review -->
+        <video id="recordedPlayback" class="webcam-video hidden" controls playsinline></video>
+
+        <!-- Live Camera HUD Overlay -->
+        <div class="webcam-overlay-hud">
+          <div class="hud-status" id="webcamStatus">
+            <span class="status-dot dot-idle" id="camStatusDot"></span>
+            <span id="camStatusText">Camera Inactive</span>
+          </div>
+          <div class="hud-timer hidden" id="webcamTimer">00:00</div>
+        </div>
+
+        <!-- Camera Turn On Prompt (Shown when camera stream is not active yet) -->
+        <div class="webcam-start-prompt" id="webcamStartPrompt">
+          <div class="prompt-icon">📹</div>
+          <h3 class="prompt-title">Live Classroom & Student Webcam Recording</h3>
+          <p class="prompt-desc">Capture live classroom or student focus directly from your camera. Record a 5–30s video, then submit it for end-to-end engagement classification.</p>
+          <button class="btn-cam-start" id="startCamBtn" type="button">
+            <span>📹 Enable Webcam</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Webcam Controls Toolbar -->
+      <div class="webcam-toolbar">
+        <div class="cam-select-wrap">
+          <label for="cameraSelect" class="cam-select-label">Device:</label>
+          <select id="cameraSelect" class="cam-select" aria-label="Select camera input"></select>
+        </div>
+
+        <div class="cam-actions">
+          <button class="btn-rec" id="recordBtn" type="button" disabled>
+            <span class="rec-icon">●</span>
+            <span id="recordBtnText">Start Recording</span>
+          </button>
+          <button class="btn-retake hidden" id="retakeBtn" type="button">
+            <span>🔄 Retake</span>
+          </button>
+          <button class="btn-use-cam hidden" id="useRecordedBtn" type="button">
+            <span>⚡ Analyse Recorded Video</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="webcam-tip">
+        <span>💡 <strong>Tip:</strong> Position students clearly facing the webcam. Once you record 5–20s, click <strong>Analyse Recorded Video</strong> to classify all faces.</span>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+      <h3 class="settings-title">⚙️ Detection Settings</h3>
+      <div class="settings-grid">
+        <div class="setting-item">
+          <label for="confThresh">YOLO Confidence <span class="setting-val" id="confVal">0.35</span></label>
+          <input type="range" id="confThresh" min="0.20" max="0.85" step="0.05" value="0.35"
+                 aria-valuemin="0.20" aria-valuemax="0.85" aria-valuenow="0.35"/>
+          <div class="setting-desc">Minimum face detection confidence. Lower = more detections, Higher = stricter.</div>
+        </div>
+        <div class="setting-item">
+          <label for="engThresh">Engagement Threshold <span class="setting-val" id="engVal">0.50</span></label>
+          <input type="range" id="engThresh" min="0.20" max="0.80" step="0.05" value="0.50"
+                 aria-valuemin="0.20" aria-valuemax="0.80" aria-valuenow="0.50"/>
+          <div class="setting-desc">Score ≥ threshold → Engaged. 50/50 equilibrium (±15%) → Partially Engaged.</div>
+        </div>
+        <div class="setting-item">
+          <label for="seqBuf">Temporal Buffer <span class="setting-val" id="seqVal">120</span> frames</label>
+          <input type="range" id="seqBuf" min="16" max="120" step="8" value="120"
+                 aria-valuemin="16" aria-valuemax="120" aria-valuenow="120"/>
+          <div class="setting-desc">Matches training window (120 frames). Lower = faster, less context.</div>
+        </div>
+        <div class="setting-item">
+          <label for="minFrames">Min Track Frames <span class="setting-val" id="minVal">12</span></label>
+          <input type="range" id="minFrames" min="5" max="60" step="1" value="12"
+                 aria-valuemin="5" aria-valuemax="60" aria-valuenow="12"/>
+          <div class="setting-desc">Eliminates ghost detections (chairs, brief flickers, passing objects).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-btn-row">
+      <button class="btn-primary" id="analyseBtn" disabled aria-label="Start analysis">
+        <span id="btnIcon">⚡</span>
+        <span id="btnText">Select a video to begin</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Processing Animation ──────────────────────────────────────── -->
+  <div class="processing-card glass hidden" id="processingCard" aria-live="polite" aria-busy="true">
+    <div class="processing-header">
+      <h2 class="processing-title">🔬 Analysing Video</h2>
+      <p class="processing-sub" id="stageLabel">Initialising models…</p>
+    </div>
+
+    <!-- Animated pipeline progress -->
+    <div class="pipe-progress" id="pipeProgress" aria-label="Pipeline progress">
+      <div class="pipe-stage" id="ps-yolo" data-stage="yolo">
+        <div class="ps-orb">👁</div>
+        <div class="ps-name">YOLOv8<br/>Face Detection</div>
+        <div class="ps-status">waiting</div>
+      </div>
+      <div class="ps-connector" id="pc-1"></div>
+      <div class="pipe-stage" id="ps-track" data-stage="track">
+        <div class="ps-orb">🔗</div>
+        <div class="ps-name">ByteTrack<br/>Tracking</div>
+        <div class="ps-status">waiting</div>
+      </div>
+      <div class="ps-connector" id="pc-2"></div>
+      <div class="pipe-stage" id="ps-effnet" data-stage="effnet">
+        <div class="ps-orb">🧠</div>
+        <div class="ps-name">EfficientNet-B0<br/>1280-dim</div>
+        <div class="ps-status">waiting</div>
+      </div>
+      <div class="ps-connector" id="pc-3"></div>
+      <div class="pipe-stage" id="ps-openface" data-stage="openface">
+        <div class="ps-orb">😶</div>
+        <div class="ps-name">OpenFace<br/>709-dim</div>
+        <div class="ps-status">waiting</div>
+      </div>
+      <div class="ps-connector" id="pc-4"></div>
+      <div class="pipe-stage" id="ps-transformer" data-stage="transformer">
+        <div class="ps-orb">⚡</div>
+        <div class="ps-name">Transformer<br/>Classification</div>
+        <div class="ps-status">waiting</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap" aria-label="Overall progress">
+      <div class="progress-bar" id="progressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <div class="progress-labels">
+      <span id="progressPct">0%</span>
+      <span id="progressStage">Queued…</span>
+    </div>
+
+    <!-- Particle canvas -->
+    <canvas class="particle-canvas" id="particleCanvas" aria-hidden="true"></canvas>
+  </div>
+
+  <!-- ── Results Section ───────────────────────────────────────────── -->
+  <div class="results-section hidden" id="resultsSection" role="region" aria-label="Analysis results">
+
+    <!-- Demo Mode Notice (shown only when in demo mode) -->
+    <div class="demo-banner hidden" id="demoBanner">
+      <div class="demo-banner-content">
+        <span class="demo-banner-pill">⚡ DEMO PREVIEW</span>
+        <span class="demo-banner-text">Viewing pre-analyzed classroom session (12 students). You can replace the video anytime in <code>outputs/demo/</code>.</span>
+      </div>
+      <button class="btn-demo-switch" id="demoSwitchBtn">Upload Your Video ⤴</button>
+    </div>
+
+    <!-- ── Organized Classroom Metrics Hub ────────────────────────────── -->
+    <div class="metrics-hub glass" id="metricsHub">
+      <!-- Executive Summary Row -->
+      <div class="metrics-header-row">
+        <div class="exec-summary">
+          <div class="exec-rate-wrap">
+            <span class="exec-rate-val" id="execRateVal">--%</span>
+            <span class="exec-rate-label">Overall Classroom Engagement</span>
+          </div>
+          <div class="exec-badge-wrap">
+            <span class="status-pill" id="execStatusPill">Analysing</span>
+            <span class="session-meta-pill" id="sessionMetaPill">Session Summary</span>
+          </div>
+        </div>
+
+        <!-- Segmented 3-Way Distribution Bar -->
+        <div class="distribution-bar-section">
+          <div class="dist-bar-header">
+            <span class="dist-title">Classroom Engagement Distribution</span>
+            <span class="dist-counts" id="distCountsSummary">-- Engaged · -- Partial · -- Disengaged</span>
+          </div>
+          <div class="segmented-dist-bar" id="segmentedDistBar">
+            <div class="seg-fill seg-engaged" id="segEngaged" style="width: 0%"></div>
+            <div class="seg-fill seg-partial" id="segPartial" style="width: 0%"></div>
+            <div class="seg-fill seg-disengaged" id="segDisengaged" style="width: 0%"></div>
+          </div>
+          <div class="dist-legend">
+            <span class="dist-legend-item"><span class="dist-dot dot-eng"></span> Engaged: <strong id="legEngVal">0%</strong></span>
+            <span class="dist-legend-item"><span class="dist-dot dot-part"></span> Partially Engaged (50/50): <strong id="legPartVal">0%</strong></span>
+            <span class="dist-legend-item"><span class="dist-dot dot-dis"></span> Disengaged: <strong id="legDisVal">0%</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3 Organized Functional Panels -->
+      <div class="metrics-panels-grid">
+        <!-- Panel 1: Engagement Breakdown (with Partially Engaged) -->
+        <div class="metric-panel panel-engagement">
+          <div class="panel-header">
+            <span class="panel-icon">👥</span>
+            <span class="panel-title">Student Classification Split</span>
+          </div>
+          <div class="panel-items-list">
+            <div class="panel-item item-engaged">
+              <div class="pi-left">
+                <span class="pi-dot dot-eng"></span>
+                <div>
+                  <div class="pi-label">Engaged Students</div>
+                  <div class="pi-sub">Active attention & focus cues</div>
+                </div>
+              </div>
+              <div class="pi-right">
+                <span class="pi-count" id="countEngaged">0</span>
+                <span class="pi-pct" id="pctEngaged">0%</span>
+              </div>
+            </div>
+
+            <div class="panel-item item-partial">
+              <div class="pi-left">
+                <span class="pi-dot dot-part"></span>
+                <div>
+                  <div class="pi-label">Partially Engaged</div>
+                  <div class="pi-sub">Balanced ~50/50 scores / shifting focus</div>
+                </div>
+              </div>
+              <div class="pi-right">
+                <span class="pi-count" id="countPartial">0</span>
+                <span class="pi-pct" id="pctPartial">0%</span>
+              </div>
+            </div>
+
+            <div class="panel-item item-disengaged">
+              <div class="pi-left">
+                <span class="pi-dot dot-dis"></span>
+                <div>
+                  <div class="pi-label">Disengaged Students</div>
+                  <div class="pi-sub">Gaze diversion, head down, or inactive</div>
+                </div>
+              </div>
+              <div class="pi-right">
+                <span class="pi-count" id="countDisengaged">0</span>
+                <span class="pi-pct" id="pctDisengaged">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2: Classroom-Level 1st Half vs 2nd Half Temporal Analysis -->
+        <div class="metric-panel panel-halftime">
+          <div class="panel-header">
+            <span class="panel-icon">⏱️</span>
+            <span class="panel-title">Temporal Half-Time Analysis</span>
+            <span class="halftime-badge" id="halftimeBadge">Split 50%</span>
+          </div>
+          <div class="halftime-cards-row">
+            <div class="ht-card ht-card-1">
+              <span class="ht-sub">First Half (0s - Mid)</span>
+              <span class="ht-val" id="htFirstHalfVal">--%</span>
+              <span class="ht-label">Initial Attention</span>
+            </div>
+            <div class="ht-arrow" id="htArrow">→</div>
+            <div class="ht-card ht-card-2">
+              <span class="ht-sub">Second Half (Mid - End)</span>
+              <span class="ht-val" id="htSecondHalfVal">--%</span>
+              <span class="ht-label">Latter Session</span>
+            </div>
+          </div>
+          <div class="ht-trend-box">
+            <div class="ht-trend-header">
+              <span class="ht-trend-tag" id="htTrendTag">Trend Diagnosis</span>
+              <span class="ht-delta" id="htDeltaVal">Δ 0.0%</span>
+            </div>
+            <p class="ht-insight-text" id="htInsightText">Classroom temporal attention insights will appear here.</p>
+          </div>
+        </div>
+
+        <!-- Panel 3: Session Telemetry & Throughput -->
+        <div class="metric-panel panel-telemetry">
+          <div class="panel-header">
+            <span class="panel-icon">⚡</span>
+            <span class="panel-title">Session Telemetry</span>
+          </div>
+          <div class="telemetry-grid">
+            <div class="telem-box">
+              <div class="telem-val" id="telemStudents">0</div>
+              <div class="telem-label">Students Tracked</div>
+            </div>
+            <div class="telem-box">
+              <div class="telem-val" id="telemDuration">0.0s</div>
+              <div class="telem-label">Video Duration</div>
+            </div>
+            <div class="telem-box">
+              <div class="telem-val" id="telemFrames">0</div>
+              <div class="telem-label">Frames Processed</div>
+            </div>
+            <div class="telem-box">
+              <div class="telem-val" id="telemFps">0.0</div>
+              <div class="telem-label">Processing FPS</div>
+            </div>
+          </div>
+          <div class="pipeline-badge-strip">
+            <span class="telem-pill">YOLOv8 + ByteTrack</span>
+            <span class="telem-pill">EfficientNet-B0</span>
+            <span class="telem-pill">1989-dim Transformer</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tabs Section ──────────────────────────────────────────────── -->
+    <div class="tabs-wrap">
+      <div class="tabs-nav" role="tablist">
+        <button class="tab-btn active" role="tab" aria-selected="true"  data-tab="video"    id="tab-video">🎥 Annotated Video</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" data-tab="students" id="tab-students">👥 Per-Student Analysis Hub</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" data-tab="charts"   id="tab-charts">📊 Analytical Charts (4)</button>
+        <button class="tab-btn"        role="tab" aria-selected="false" data-tab="download" id="tab-download">📥 Download Documents</button>
+      </div>
+
+      <!-- Video Tab -->
+      <div class="tab-content active" id="tab-video-content" role="tabpanel" aria-labelledby="tab-video">
+        <div class="video-wrap">
+          <video id="resultVideo" class="result-video" controls playsinline>
+            <source src="" type="video/mp4"/>
+            Your browser does not support HTML5 video.
+          </video>
+          <div class="video-legend">
+            <span class="legend-dot engaged"></span> Engaged (High Score)
+            <span class="legend-dot partial"></span> Partially Engaged (50/50)
+            <span class="legend-dot disengaged"></span> Disengaged (Low Score)
+            <span class="legend-info">Probability matrix shown as <code>E:XX% D:XX%</code> bounding overlay</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Students Tab (Organized Hub with Table & Card views) -->
+      <div class="tab-content" id="tab-students-content" role="tabpanel" aria-labelledby="tab-students">
+        <!-- Filter and View Controls Bar -->
+        <div class="students-toolbar">
+          <div class="filter-pills-row" role="group" aria-label="Filter students by status">
+            <button class="filter-pill active" data-filter="all" id="filterAll">All Students (<span id="fCountAll">0</span>)</button>
+            <button class="filter-pill filter-eng" data-filter="Engaged" id="filterEng">Engaged (<span id="fCountEng">0</span>)</button>
+            <button class="filter-pill filter-part" data-filter="Partially Engaged" id="filterPart">Partially Engaged (<span id="fCountPart">0</span>)</button>
+            <button class="filter-pill filter-dis" data-filter="Disengaged" id="filterDis">Disengaged (<span id="fCountDis">0</span>)</button>
+          </div>
+
+          <div class="toolbar-right">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="studentSearch" placeholder="Search student ID..." aria-label="Search student ID"/>
+            </div>
+
+            <div class="sort-box">
+              <label for="studentSort">Sort:</label>
+              <select id="studentSort" aria-label="Sort students">
+                <option value="id_asc">Student ID ↑</option>
+                <option value="eng_desc">Highest Engagement</option>
+                <option value="dis_desc">Highest Disengagement</option>
+                <option value="frames_desc">Longest Tracked</option>
+                <option value="trend_desc">1st→2nd Half Change</option>
+              </select>
+            </div>
+
+            <div class="view-toggle" role="group" aria-label="Toggle student view">
+              <button class="view-btn active" id="viewTableBtn" title="Structured Table View">📋 Table</button>
+              <button class="view-btn" id="viewCardsBtn" title="Compact Cards View">🗂️ Cards</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Structured Table View Container -->
+        <div class="students-table-wrap" id="studentsTableWrap">
+          <table class="students-table" id="studentsTable">
+            <thead>
+              <tr>
+                <th scope="col">Student</th>
+                <th scope="col">Overall Status</th>
+                <th scope="col">2×1 Probability Matrix</th>
+                <th scope="col">Probability Distribution</th>
+                <th scope="col">1st vs 2nd Half Trend</th>
+                <th scope="col">Tracked Duration</th>
+              </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Cards View Container (Alternative toggled view) -->
+        <div class="students-grid hidden" id="studentsGrid">
+          <!-- Cards filled dynamically -->
+        </div>
+      </div>
+
+      <!-- Charts Tab -->
+      <div class="tab-content" id="tab-charts-content" role="tabpanel" aria-labelledby="tab-charts">
+        <div class="charts-grid" id="chartsGrid">
+          <!-- Charts filled dynamically -->
+        </div>
+      </div>
+
+      <!-- Downloads Tab -->
+      <div class="tab-content" id="tab-download-content" role="tabpanel" aria-labelledby="tab-download">
+        <div class="downloads-list" id="downloadsList">
+          <!-- Download links filled dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- New Analysis button -->
+    <div class="new-analysis-row">
+      <button class="btn-secondary" id="newAnalysisBtn" aria-label="Start new analysis">
+        ↩ Analyse Another Video
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Error Banner ──────────────────────────────────────────────── -->
+  <div class="error-banner hidden" id="errorBanner" role="alert" aria-live="assertive">
+    <span class="error-icon">⚠️</span>
+    <span id="errorText">An error occurred.</span>
+    <button class="error-close" id="errorClose" aria-label="Close error">✕</button>
+  </div>
+</main>
+
+<!-- ── Footer ─────────────────────────────────────────────────────── -->
+<footer class="footer" role="contentinfo">
+  <div class="footer-inner">
+    <p>
+      EngageAI · Binary Engagement Transformer ·
+      YOLOv8 + ByteTrack + EfficientNet-B0 + OpenFace · 1989-dim · ~80% Accuracy
+    </p>
+    <p class="footer-stack">Flask · PyTorch · OpenCV · Ultralytics</p>
+  </div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>

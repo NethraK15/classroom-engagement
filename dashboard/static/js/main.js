@@ -597,6 +597,10 @@ function startPolling(jobId) {
   pollInterval = setInterval(async () => {
     try {
       const resp = await fetch(`/status/${jobId}`);
+      if (!resp.ok) {
+        // Network hiccup or container restart — keep progress intact
+        return;
+      }
       const job  = await resp.json();
 
       // Update progress bar

@@ -18,10 +18,17 @@ import traceback
 import subprocess
 import tempfile
 
+import gc
 import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
+
+# Limit PyTorch CPU threads to prevent memory buffer bloat on 512MB cloud instances
+try:
+    torch.set_num_threads(1)
+except Exception:
+    pass
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -188,8 +195,17 @@ def allowed_file(filename):
 
 
 def update_job(job_id, **kwargs):
-    if job_id in JOBS:
-        JOBS[job_id].update(kwargs)
+    if job_id not in JOBS:
+        JOBS[job_id] = {}
+    JOBS[job_id].update(kwargs)
+    try:
+        jdir = os.path.join(app.config["UPLOAD_FOLDER"], job_id)
+        if os.path.exists(jdir):
+            jpath = os.path.join(jdir, "job.json")
+            with open(jpath, "w") as f:
+                json.dump(JOBS[job_id], f)
+    except Exception:
+        pass
 
 
 def _reencode_video(src, dst):
@@ -508,6 +524,15 @@ def process_video_job(job_id: str, video_path: str, conf_thresh: float,
         if total <= 0:
             total = 200
 
+        # Cap working resolution to 720p max to stay strictly within 512MB RAM on Render
+        max_dim = max(W, H)
+        if max_dim > 720:
+            scale = 720.0 / float(max_dim)
+            W = int(W * scale)
+            H = int(H * scale)
+            W = W if W % 2 == 0 else W + 1
+            H = H if H % 2 == 0 else H + 1
+
         stem = os.path.splitext(os.path.basename(video_path))[0]
         out_dir = os.path.join(app.config["UPLOAD_FOLDER"], job_id)
         os.makedirs(out_dir, exist_ok=True)
@@ -549,6 +574,8 @@ def process_video_job(job_id: str, video_path: str, conf_thresh: float,
             if not ret:
                 break
             frame_count += 1
+            if frame.shape[1] != W or frame.shape[0] != H:
+                frame = cv2.resize(frame, (W, H))
 
             # Update progress + sequential stage
             pct = min(int(frame_count / total * 90), 90)
@@ -646,12 +673,14 @@ def process_video_job(job_id: str, video_path: str, conf_thresh: float,
                         pred_history[track_id] = {}
                         prob_history[track_id] = {}
 
-                    face_buffers[track_id].append(fused_t.view(-1))
+                    fused_np = fused_t.view(-1).cpu().detach().numpy()
+                    face_buffers[track_id].append(fused_np)
                     if len(face_buffers[track_id]) > seq_buf:
                         face_buffers[track_id].pop(0)
 
                     actual_len = len(face_buffers[track_id])
-                    seq_t = torch.stack([f.view(-1) for f in face_buffers[track_id]]).to(engine.device)
+                    seq_arr = np.stack(face_buffers[track_id])
+                    seq_t = torch.from_numpy(seq_arr).float().to(engine.device)
                     if actual_len < seq_buf:
                         pad = torch.zeros((seq_buf - actual_len, engine.input_dim), dtype=torch.float32, device=engine.device)
                         seq_t = torch.cat([seq_t, pad], dim=0).unsqueeze(0)
@@ -714,6 +743,8 @@ def process_video_job(job_id: str, video_path: str, conf_thresh: float,
                                    "students": frame_stud, "engaged": frame_engaged,
                                    "disengaged": frame_diseng, "engagement_rate": eng_rate})
             writer.write(frame)
+            if frame_count % 20 == 0:
+                gc.collect()
 
         cap.release()
         writer.release()
@@ -926,6 +957,15 @@ def upload():
 @app.route("/status/<job_id>")
 def job_status(job_id):
     job = JOBS.get(job_id)
+    if not job:
+        jpath = os.path.join(app.config["UPLOAD_FOLDER"], job_id, "job.json")
+        if os.path.exists(jpath):
+            try:
+                with open(jpath, "r") as f:
+                    job = json.load(f)
+                    JOBS[job_id] = job
+            except Exception:
+                pass
     if not job:
         return jsonify({"error": "Job not found"}), 404
     return jsonify(job)

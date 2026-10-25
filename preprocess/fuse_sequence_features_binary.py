@@ -197,11 +197,15 @@ def extract_cnn_features(frames_np, model, normalize, device, batch_size=CNN_BAT
 # STEP 4 — OPENFACE FEATURES  (REQUIRED — no fallback)
 # ─────────────────────────────────────────────────────────────────────
 OPENFACE_SEARCH_PATHS = [
+    "C:/OpenFace_2.2.0_win_x64/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+    "C:/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+    "D:/OpenFace_2.2.0_win_x64/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+    "D:/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+    "d:/Amrita/Final_Year_Project/Sem_6 Work/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
     "/content/OpenFace/build/bin/FeatureExtraction",
     "/content/OpenFace/exe/FeatureExtraction/FeatureExtraction",
     "/content/OpenFace/exe/FeatureExtraction",
     "FeatureExtraction",
-    "d:/Amrita/Final_Year_Project/Sem_6 Work/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
 ]
 
 def find_openface_executable():

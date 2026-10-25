@@ -105,24 +105,26 @@ pip install -r requirements.txt
 ---
 
 ### Step 5: Connect OpenFace to the Python Pipeline
-The pipeline automatically searches for OpenFace in `C:\OpenFace_2.2.0_win_x64\FeatureExtraction.exe` or inside the project folder.
+The pipeline now automatically detects both unnested and nested extraction paths:
+- `C:\OpenFace_2.2.0_win_x64\OpenFace_2.2.0_win_x64\FeatureExtraction.exe` *(default when unzipping)*
+- `C:\OpenFace_2.2.0_win_x64\FeatureExtraction.exe`
+- Or any subfolder inside `C:\OpenFace_2.2.0_win_x64\` (auto-detected via recursive scan)
 
-To guarantee OpenFace is detected regardless of where you extracted it:
+To explicitly specify the path if needed:
 ```cmd
 :: In Command Prompt:
-set OPENFACE_EXE=C:\OpenFace_2.2.0_win_x64\FeatureExtraction.exe
+set OPENFACE_EXE=C:\OpenFace_2.2.0_win_x64\OpenFace_2.2.0_win_x64\FeatureExtraction.exe
 
 :: Or in PowerShell:
-$env:OPENFACE_EXE="C:\OpenFace_2.2.0_win_x64\FeatureExtraction.exe"
+$env:OPENFACE_EXE="C:\OpenFace_2.2.0_win_x64\OpenFace_2.2.0_win_x64\FeatureExtraction.exe"
 ```
-*(You can also add `OPENFACE_EXE` permanently to Windows Environment Variables)*.
 
 Verify Python detects OpenFace by running:
 ```cmd
 python -c "from feature_extractor_binary import OpenFaceFeatureExtractor; fe = OpenFaceFeatureExtractor(); print('OpenFace Exe:', fe.openface_exe)"
 ```
 Output will show:
-`[OpenFace] C++ binary detected: C:\OpenFace_2.2.0_win_x64\FeatureExtraction.exe`
+`[OpenFace] C++ binary detected: C:\OpenFace_2.2.0_win_x64\OpenFace_2.2.0_win_x64\FeatureExtraction.exe`
 
 ---
 

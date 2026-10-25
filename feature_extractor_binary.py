@@ -141,12 +141,16 @@ class OpenFaceFeatureExtractor:
         # 3. Check common Windows / Linux / project directories
         this_dir = os.path.dirname(os.path.abspath(__file__))
         candidates = [
-            os.path.join(this_dir, "OpenFace_2.2.0_win_x64", "FeatureExtraction.exe"),
-            os.path.join(this_dir, "..", "OpenFace_2.2.0_win_x64", "FeatureExtraction.exe"),
+            "C:/OpenFace_2.2.0_win_x64/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
             "C:/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+            "D:/OpenFace_2.2.0_win_x64/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+            "D:/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
+            os.path.join(this_dir, "OpenFace_2.2.0_win_x64", "OpenFace_2.2.0_win_x64", "FeatureExtraction.exe"),
+            os.path.join(this_dir, "OpenFace_2.2.0_win_x64", "FeatureExtraction.exe"),
+            os.path.join(this_dir, "..", "OpenFace_2.2.0_win_x64", "OpenFace_2.2.0_win_x64", "FeatureExtraction.exe"),
+            os.path.join(this_dir, "..", "OpenFace_2.2.0_win_x64", "FeatureExtraction.exe"),
             "C:/OpenFace/FeatureExtraction.exe",
             "C:/Program Files/OpenFace/FeatureExtraction.exe",
-            "D:/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
             "d:/Amrita/Final_Year_Project/Sem_6 Work/OpenFace_2.2.0_win_x64/FeatureExtraction.exe",
             "/content/OpenFace/build/bin/FeatureExtraction",
             "/content/OpenFace/exe/FeatureExtraction/FeatureExtraction",
@@ -157,6 +161,22 @@ class OpenFaceFeatureExtractor:
         for p in candidates:
             if os.path.isfile(p):
                 return p
+
+        # 4. Search within base extraction folders in case of arbitrary nesting
+        search_roots = [
+            "C:/OpenFace_2.2.0_win_x64",
+            "D:/OpenFace_2.2.0_win_x64",
+            os.path.join(this_dir, "OpenFace_2.2.0_win_x64"),
+            os.path.join(this_dir, "..", "OpenFace_2.2.0_win_x64"),
+        ]
+        for sroot in search_roots:
+            if os.path.isdir(sroot):
+                for root_dir, _, files in os.walk(sroot):
+                    for fname in files:
+                        if fname.lower() in ("featureextraction.exe", "featureextraction"):
+                            fpath = os.path.join(root_dir, fname)
+                            if os.path.isfile(fpath):
+                                return fpath
         return None
 
     def extract_from_crop(self, face_crop_bgr, previous_feat=None):

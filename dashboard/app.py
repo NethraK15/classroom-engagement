@@ -942,7 +942,7 @@ def upload():
     eng_thresh   = float(request.form.get("eng_thresh", 0.50))
     seq_buf      = int(request.form.get("seq_buf", 120))
     min_frames   = int(request.form.get("min_frames", 12))
-    JOBS[job_id] = {"status": "queued", "progress": 0, "stage": "Queued…", "result": None, "error": None}
+    update_job(job_id, status="queued", progress=1, stage="Video received, initializing pipeline…", result=None, error=None)
 
     t = threading.Thread(
         target=process_video_job,
@@ -988,9 +988,14 @@ def download_file(job_id, filename):
     return send_file(fpath, as_attachment=True)
 
 
-# ── DEMO SESSION ENDPOINT ────────────────────────────────────────────────────
+DEMO_CACHE = None
+
 def get_or_create_demo_result():
     """Returns a rich pre-computed demonstration session for instant preview."""
+    global DEMO_CACHE
+    if DEMO_CACHE is not None:
+        return DEMO_CACHE
+
     demo_dir = os.path.join(app.config["UPLOAD_FOLDER"], "demo")
     os.makedirs(demo_dir, exist_ok=True)
 
@@ -1132,15 +1137,25 @@ def get_or_create_demo_result():
             "second_half_duration": round(duration_sec - mid_sec, 1),
         }
 
-    # Generate charts
+    # Use pre-rendered charts if available on disk (avoids heavy matplotlib spikes)
     stem = "demo"
-    charts_saved = generate_charts(demo_students, frame_metrics, demo_dir, stem, half_time_data=half_time_data)
+    chart_keys = ["student_chart", "timeline_chart", "pie_chart", "halftime_chart"]
+    existing_charts = {
+        k: f"/outputs/demo/demo_{k}.png" for k in chart_keys
+        if os.path.exists(os.path.join(demo_dir, f"demo_{k}.png"))
+    }
+    if len(existing_charts) == len(chart_keys):
+        charts_dict = existing_charts
+    else:
+        charts_saved = generate_charts(demo_students, frame_metrics, demo_dir, stem, half_time_data=half_time_data)
+        charts_dict = {k: f"/outputs/demo/{os.path.basename(v)}" for k, v in charts_saved}
 
     # Ensure text report exists
     report_path = os.path.join(demo_dir, "demo_report.txt")
-    rpt_txt = generate_text_report("demo_classroom_session", demo_students, frame_metrics, total_frames, fps, 7.8, half_time_data=half_time_data)
-    with open(report_path, "w") as f:
-        f.write(rpt_txt)
+    if not os.path.exists(report_path):
+        rpt_txt = generate_text_report("demo_classroom_session", demo_students, frame_metrics, total_frames, fps, 7.8, half_time_data=half_time_data)
+        with open(report_path, "w") as f:
+            f.write(rpt_txt)
 
     # Ensure CSV exists
     csv_path = os.path.join(demo_dir, "demo_engagement_log.csv")
@@ -1165,12 +1180,12 @@ def get_or_create_demo_result():
     n_dis     = sum(1 for s in demo_students if s["overall_status"] == "Disengaged")
     overall_eng_val = float(np.mean([m["engagement_rate"] for m in frame_metrics])) if frame_metrics else 35.6
 
-    return {
+    res_payload = {
         "video_url":          f"/outputs/demo/{chosen_video}",
         "student_summary":    demo_students,
         "frame_metrics":      frame_metrics[-200:],
         "halftime_analysis":  half_time_data,
-        "charts":             {k: f"/outputs/demo/{os.path.basename(v)}" for k, v in charts_saved},
+        "charts":             charts_dict,
         "csv_url":            "/outputs/demo/demo_engagement_log.csv",
         "report_url":         "/outputs/demo/demo_report.txt",
         "is_demo":            True,
@@ -1194,6 +1209,8 @@ def get_or_create_demo_result():
             "halftime_trend":              half_time_data["trend_direction"],
         }
     }
+    DEMO_CACHE = res_payload
+    return res_payload
 
 
 @app.route("/demo")
